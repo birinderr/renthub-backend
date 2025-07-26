@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import { sendOTPEmail } from '../utils/sendEmail.js';
+import generateToken from '../utils/generateToken.js';
 import bcrypt from 'bcryptjs';
 
 const pendingUsers = new Map();
@@ -43,6 +44,7 @@ export const loginUser = async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      token: generateToken(user._id),
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

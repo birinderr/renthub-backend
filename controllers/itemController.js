@@ -5,7 +5,7 @@ import Item from '../models/Item.js';
 // @access  Public
 export const getItems = async (req, res) => {
   try {
-    const items = await Item.find({});
+    const items = await Item.find({ isApproved: true });
     res.json(items);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -18,11 +18,19 @@ export const getItems = async (req, res) => {
 export const getItemById = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-    if (item) {
-      res.json(item);
-    } else {
-      res.status(404).json({ message: 'Item not found' });
+
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
     }
+
+    if (
+      !item.isApproved &&
+      (!req.user || (req.user._id.toString() !== item.owner.toString() && !req.user.isAdmin))
+    ) {
+      return res.status(403).json({ message: 'Access denied. Item not approved yet.' });
+    }
+
+    res.json(item);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -99,13 +107,13 @@ export const deleteItem = async (req, res) => {
 // @access  Private (Logged-in users)
 export const requestItem = async (req, res) => {
   try {
-    const { name, description, category, price, image } = req.body;
+    const { name, description, category, pricePerDay, image } = req.body;
 
     const item = await Item.create({
       name,
       description,
       category,
-      price,
+      pricePerDay,
       image,
       owner: req.user._id,
       isApproved: false, // default false until admin approves

@@ -12,12 +12,12 @@ import {
 
 import { protect, isAdmin } from '../middleware/authMiddleware.js';
 
+// Logged in users
+router.post('/request', protect, requestItem);
+
 // Public
 router.get('/', getItems);
 router.get('/:id', getItemById);
-
-// Logged in users
-router.post('/request', protect, requestItem);
 
 // Admin
 router.post('/', protect, isAdmin, createItem);

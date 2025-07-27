@@ -99,3 +99,27 @@ export const rejectItem = async (req, res) => {
     res.status(500).json({ message: 'Error rejecting item', error: err.message });
   }
 };
+
+
+export const getAdminStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const adminCount = await User.countDocuments({ isAdmin: true });
+
+    const totalItems = await Item.countDocuments();
+    const pendingItems = await Item.countDocuments({ status: 'pending' });
+    const approvedItems = await Item.countDocuments({ status: 'approved' });
+    const rejectedItems = await Item.countDocuments({ status: 'rejected' });
+
+    res.json({
+      totalUsers,
+      adminCount,
+      totalItems,
+      pendingItems,
+      approvedItems,
+      rejectedItems,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error getting admin stats', error: error.message });
+  }
+};

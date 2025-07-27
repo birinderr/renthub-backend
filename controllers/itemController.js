@@ -93,3 +93,26 @@ export const deleteItem = async (req, res) => {
     res.status(500).json({ message: 'Failed to delete item', error: error.message });
   }
 };
+
+// @desc    User submits a new item for rent
+// @route   POST /api/items/request
+// @access  Private (Logged-in users)
+export const requestItem = async (req, res) => {
+  try {
+    const { name, description, category, price, image } = req.body;
+
+    const item = await Item.create({
+      name,
+      description,
+      category,
+      price,
+      image,
+      owner: req.user._id,
+      isApproved: false, // default false until admin approves
+    });
+
+    res.status(201).json({ message: 'Item submitted for approval', item });
+  } catch (err) {
+    res.status(500).json({ message: 'Error submitting item', error: err.message });
+  }
+};

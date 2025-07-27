@@ -4,6 +4,7 @@ import connectDB from './config/db.js';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import itemRoutes from './routes/itemRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/items', itemRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

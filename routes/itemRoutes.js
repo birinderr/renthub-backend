@@ -4,6 +4,7 @@ const router = express.Router();
 import {
   getItems,
   getItemById,
+  getMyItems,
   createItem,
   updateItem,
   deleteItem,
@@ -13,7 +14,9 @@ import {
 import { protect, isAdmin } from '../middleware/authMiddleware.js';
 
 // Logged in users
+router.get('/myitems', protect, getMyItems);
 router.post('/request', protect, requestItem);
+
 
 // Public
 router.get('/', getItems);

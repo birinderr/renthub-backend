@@ -12,6 +12,15 @@ export const getItems = async (req, res) => {
   }
 };
 
+export const getMyItems = async (req, res) => {
+  try {
+    const items = await Item.find({ owner: req.user._id });
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching your items', error: err.message });
+  }
+};
+
 // @desc    Get item by ID
 // @route   GET /api/items/:id
 // @access  Public / Restricted

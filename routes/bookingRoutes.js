@@ -1,5 +1,5 @@
 import express from 'express';
-import { createBooking, getMyBookings } from '../controllers/bookingController.js';
+import { createBooking, getMyBookings, getOwnerBookings } from '../controllers/bookingController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -8,5 +8,7 @@ const router = express.Router();
 router.post('/', protect, createBooking);
 
 router.get('/my', protect, getMyBookings);
+router.get('/owner', protect, getOwnerBookings);
+
 
 export default router;

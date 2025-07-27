@@ -56,3 +56,15 @@ export const createBooking = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+export const getOwnerBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ owner: req.user._id })
+      .populate('item', 'name pricePerDay image')
+      .populate('renter', 'name email');
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

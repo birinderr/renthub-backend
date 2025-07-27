@@ -68,3 +68,30 @@ export const getOwnerBookings = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    if (booking.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to update this booking' });
+    }
+
+    const { status } = req.body;
+
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    booking.status = status;
+    const updated = await booking.save();
+
+    res.status(200).json({ message: `Booking ${status}`, booking: updated });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

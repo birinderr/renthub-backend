@@ -13,6 +13,15 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+export const getAllItemsAdmin = async (req, res) => {
+  try {
+    const items = await Item.find().populate('owner', 'name email');
+    res.status(200).json(items);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching all items', error: err.message });
+  }
+};
+
 // @desc    Delete a user by admin
 // @route   DELETE /api/admin/users/:id
 // @access  Admin

@@ -7,6 +7,7 @@ import {
   createItem,
   updateItem,
   deleteItem,
+  requestItem,
 } from '../controllers/itemController.js';
 
 import { protect, isAdmin } from '../middleware/authMiddleware.js';
@@ -14,6 +15,9 @@ import { protect, isAdmin } from '../middleware/authMiddleware.js';
 // Public
 router.get('/', getItems);
 router.get('/:id', getItemById);
+
+// Logged in users
+router.post('/request', protect, requestItem);
 
 // Admin
 router.post('/', protect, isAdmin, createItem);

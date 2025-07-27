@@ -1,11 +1,11 @@
 import Item from '../models/Item.js';
 
-// @desc    Get all items
+// @desc    Get all approved items
 // @route   GET /api/items
 // @access  Public
 export const getItems = async (req, res) => {
   try {
-    const items = await Item.find({ isApproved: true });
+    const items = await Item.find({ status: 'approved' });
     res.json(items);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -14,7 +14,7 @@ export const getItems = async (req, res) => {
 
 // @desc    Get item by ID
 // @route   GET /api/items/:id
-// @access  Public
+// @access  Public / Restricted
 export const getItemById = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -23,8 +23,9 @@ export const getItemById = async (req, res) => {
       return res.status(404).json({ message: 'Item not found' });
     }
 
+    // If item is not approved, allow only owner or admin to see it
     if (
-      !item.isApproved &&
+      item.status !== 'approved' &&
       (!req.user || (req.user._id.toString() !== item.owner.toString() && !req.user.isAdmin))
     ) {
       return res.status(403).json({ message: 'Access denied. Item not approved yet.' });
@@ -36,20 +37,20 @@ export const getItemById = async (req, res) => {
   }
 };
 
-// @desc    Create a new item
+// @desc    Admin creates an approved item directly
 // @route   POST /api/items
 // @access  Admin
 export const createItem = async (req, res) => {
   try {
-    const { name, description, image, category, price, available } = req.body;
+    const { name, description, image, category, pricePerDay } = req.body;
 
     const item = new Item({
       name,
       description,
       image,
       category,
-      price,
-      available,
+      pricePerDay,
+      status: 'approved'
     });
 
     const createdItem = await item.save();
@@ -59,7 +60,7 @@ export const createItem = async (req, res) => {
   }
 };
 
-// @desc    Update an item
+// @desc    Admin updates an item
 // @route   PUT /api/items/:id
 // @access  Admin
 export const updateItem = async (req, res) => {
@@ -71,8 +72,9 @@ export const updateItem = async (req, res) => {
       item.description = req.body.description || item.description;
       item.image = req.body.image || item.image;
       item.category = req.body.category || item.category;
-      item.price = req.body.price || item.price;
+      item.pricePerDay = req.body.pricePerDay || item.pricePerDay;
       item.available = req.body.available ?? item.available;
+      item.status = req.body.status || item.status;
 
       const updatedItem = await item.save();
       res.json(updatedItem);
@@ -84,7 +86,7 @@ export const updateItem = async (req, res) => {
   }
 };
 
-// @desc    Delete an item
+// @desc    Admin deletes an item
 // @route   DELETE /api/items/:id
 // @access  Admin
 export const deleteItem = async (req, res) => {
@@ -102,9 +104,9 @@ export const deleteItem = async (req, res) => {
   }
 };
 
-// @desc    User submits a new item for rent
+// @desc    User requests an item to be listed
 // @route   POST /api/items/request
-// @access  Private (Logged-in users)
+// @access  Private
 export const requestItem = async (req, res) => {
   try {
     const { name, description, category, pricePerDay, image } = req.body;
@@ -116,7 +118,7 @@ export const requestItem = async (req, res) => {
       pricePerDay,
       image,
       owner: req.user._id,
-      isApproved: false, // default false until admin approves
+      status: 'pending'
     });
 
     res.status(201).json({ message: 'Item submitted for approval', item });

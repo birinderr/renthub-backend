@@ -71,3 +71,18 @@ export const getItemReviews = async (req, res) => {
     res.status(500).json({ message: 'Failed to get reviews', error: error.message });
   }
 };
+
+// @desc    Get reviews by item ID
+// @route   GET /api/reviews/item/:itemId
+// @access  Public
+export const getReviewsByItem = async (req, res) => {
+  try {
+    const reviews = await Review.find({ item: req.params.itemId })
+      .populate('renter', 'name')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch reviews' });
+  }
+};

@@ -87,6 +87,9 @@ export const approveItem = async (req, res) => {
   }
 };
 
+// admin rejects an item
+// @route   PUT /api/admin/items/:id/reject
+// @access  Admin
 export const rejectItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -100,7 +103,9 @@ export const rejectItem = async (req, res) => {
   }
 };
 
-
+// @desc    Get admin statistics
+// @route   GET /api/admin/stats
+// @access  Admin
 export const getAdminStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();

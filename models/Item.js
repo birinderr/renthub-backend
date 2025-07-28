@@ -29,6 +29,14 @@ const itemSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+    reviewCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

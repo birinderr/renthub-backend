@@ -58,7 +58,7 @@ export const createReview = async (req, res) => {
 export const getItemReviews = async (req, res) => {
   try {
     const reviews = await Review.find({ item: req.params.itemId })
-      .populate('user', 'name') 
+      .populate('renter', 'name') 
       .sort({ createdAt: -1 });
 
     res.json(reviews);
@@ -86,24 +86,17 @@ export const getReviewsByItem = async (req, res) => {
 // @route   DELETE /api/reviews/:id
 // @access  Private (admin)
 export const deleteReview = async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized: user info missing' });
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ message: 'Only admins can delete reviews' });
   }
+
   const reviewId = req.params.id;
-  const userId = req.user._id;
-  const isAdmin = req.user.isAdmin;
 
   try {
     const review = await Review.findById(reviewId);
 
     if (!review) {
       return res.status(404).json({ message: 'Review not found' });
-    }
-
-    if (!isAdmin) {
-        if (!review.renter || review.renter.toString() !== userId.toString()) {
-            return res.status(403).json({ message: 'Not authorized to delete this review' });
-        }
     }
 
     const itemId = review.item;

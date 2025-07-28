@@ -1,9 +1,9 @@
 import User from '../models/User.js';
 import Item from '../models/Item.js';
+import Booking from '../models/Booking.js';
 
 // @desc    Get all users (excluding passwords)
 // @route   GET /api/admin/users
-// @access  Admin
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
@@ -24,7 +24,6 @@ export const getAllItemsAdmin = async (req, res) => {
 
 // @desc    Delete a user by admin
 // @route   DELETE /api/admin/users/:id
-// @access  Admin
 export const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -44,7 +43,6 @@ export const deleteUser = async (req, res) => {
 
 // @desc    Update user details by admin
 // @route   PUT /api/admin/users/:id
-// @access  Admin
 export const updateUserByAdmin = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -70,7 +68,6 @@ export const updateUserByAdmin = async (req, res) => {
 
 // @desc    Admin approves an item
 // @route   PUT /api/admin/items/:id/approve
-// @access  Admin
 export const approveItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -89,7 +86,6 @@ export const approveItem = async (req, res) => {
 
 // admin rejects an item
 // @route   PUT /api/admin/items/:id/reject
-// @access  Admin
 export const rejectItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
@@ -105,7 +101,6 @@ export const rejectItem = async (req, res) => {
 
 // @desc    Get admin statistics
 // @route   GET /api/admin/stats
-// @access  Admin
 export const getAdminStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
@@ -126,5 +121,20 @@ export const getAdminStats = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error getting admin stats', error: error.message });
+  }
+};
+
+// @desc    Get all bookings for admin
+// @route   GET /api/admin/bookings
+export const getAllBookingsAdmin = async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .populate('item', 'name')
+      .populate('renter', 'name email')
+      .populate('owner', 'name email');
+
+    res.status(200).json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching bookings', error: error.message });
   }
 };

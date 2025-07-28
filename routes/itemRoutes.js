@@ -9,6 +9,7 @@ import {
   updateItem,
   deleteItem,
   requestItem,
+  deleteItemByOwner,
 } from '../controllers/itemController.js';
 
 import { protect, isAdmin } from '../middleware/authMiddleware.js';
@@ -26,5 +27,8 @@ router.get('/:id', getItemById);
 router.post('/', protect, isAdmin, createItem);
 router.put('/:id', protect, isAdmin, updateItem);
 router.delete('/:id', protect, isAdmin, deleteItem);
+
+// Private
+router.delete('/owner/:id', protect, deleteItemByOwner);
 
 export default router;

@@ -1,4 +1,5 @@
 import Item from '../models/Item.js';
+import asyncHandler from 'express-async-handler';
 
 // @desc    Get all approved items
 // @route   GET /api/items
@@ -135,3 +136,21 @@ export const requestItem = async (req, res) => {
     res.status(500).json({ message: 'Error submitting item', error: err.message });
   }
 };
+
+// @desc    User deletes their own item
+// @route   DELETE /api/items/:id
+// @access  Private
+export const deleteItemByOwner = asyncHandler(async (req, res) => {
+  const item = await Item.findById(req.params.id);
+
+  if (!item) {
+    return res.status(404).json({ message: 'Item not found' });
+  }
+
+  if (item.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ message: 'Not authorized to delete this item' });
+  }
+
+  await item.deleteOne();
+  res.status(200).json({ message: 'Item deleted by owner successfully' });
+});

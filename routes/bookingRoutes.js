@@ -7,8 +7,8 @@ const router = express.Router();
 // User creates booking
 router.post('/', protect, createBooking);
 
-router.get('/my', protect, getMyBookings);
-router.get('/owner', protect, getOwnerBookings);
-router.put('/:id/status', protect, updateBookingStatus);
+router.get('/my', protect, getMyBookings); // get renter's bookings
+router.get('/owner', protect, getOwnerBookings); // get owner's bookings
+router.put('/:id/status', protect, updateBookingStatus); // approve or reject the booking made by user
 
 export default router;

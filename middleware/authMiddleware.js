@@ -3,6 +3,8 @@ import User from '../models/User.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
+// middleware to protect routes
+// checks if the user is authenticated and has a valid token
 export const protect = async (req, res, next) => {
   let token;
 
@@ -24,6 +26,8 @@ export const protect = async (req, res, next) => {
   }
 };
 
+// middleware to check if the user is an admin
+// checks if the user has admin privileges
 export const isAdmin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
     next(); 

@@ -6,54 +6,49 @@ import Booking from '../models/Booking.js';
 // @route   POST /api/reviews/:itemId
 // @access  Private
 export const createReview = async (req, res) => {
+  const { rating, comment } = req.body;
+  const itemId = req.params.itemId;
+  const userId = req.user._id;
+
   try {
-    const { rating, comment } = req.body;
-    const itemId = req.params.itemId;
-    const userId = req.user._id;
-
-    const item = await Item.findById(itemId);
-    if (!item) {
-      return res.status(404).json({ message: 'Item not found' });
-    }
-
-    const existingReview = await Review.findOne({ item: itemId, user: userId });
-    if (existingReview) {
-      return res.status(400).json({ message: 'You already reviewed this item' });
-    }
-
-    const validBooking = await Booking.findOne({
+    const booking = await Booking.findOne({
       item: itemId,
       renter: userId,
       status: 'approved',
       endDate: { $lt: new Date() }, 
     });
 
-    if (!validBooking) {
-      return res.status(403).json({ message: 'You can only review items you have completed renting' });
+    if (!booking) {
+      return res.status(400).json({ message: 'You can only review items you have completed renting' });
     }
 
-    const review = new Review({
+    // Check if user already reviewed
+    const alreadyReviewed = await Review.findOne({ item: itemId, renter: userId });
+    if (alreadyReviewed) {
+      return res.status(400).json({ message: 'You have already reviewed this item' });
+    }
+
+    const review = await Review.create({
       item: itemId,
-      user: userId,
+      renter: userId,
+      owner: booking.owner,
       rating,
       comment,
     });
 
-    await review.save();
-
     
     const reviews = await Review.find({ item: itemId });
+    const totalRating = reviews.reduce((acc, r) => acc + r.rating, 0);
+    const averageRating = totalRating / reviews.length;
 
-    const avgRating =
-      reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
+    await Item.findByIdAndUpdate(itemId, {
+      averageRating: averageRating.toFixed(1),
+      reviewCount: reviews.length,
+    });
 
-    item.averageRating = avgRating;
-    item.reviewCount = reviews.length;
-    await item.save();
-
-    res.status(201).json({ message: 'Review added successfully', review });
+    res.status(201).json(review);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating review', error: error.message });
   }
 };
 
@@ -84,5 +79,52 @@ export const getReviewsByItem = async (req, res) => {
     res.status(200).json(reviews);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch reviews' });
+  }
+};
+
+// @desc    Delete a review
+// @route   DELETE /api/reviews/:id
+// @access  Private (admin)
+export const deleteReview = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized: user info missing' });
+  }
+  const reviewId = req.params.id;
+  const userId = req.user._id;
+  const isAdmin = req.user.isAdmin;
+
+  try {
+    const review = await Review.findById(reviewId);
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    if (!isAdmin) {
+        if (!review.renter || review.renter.toString() !== userId.toString()) {
+            return res.status(403).json({ message: 'Not authorized to delete this review' });
+        }
+    }
+
+    const itemId = review.item;
+
+    await review.deleteOne();
+
+    const reviews = await Review.find({ item: itemId });
+
+    let averageRating = 0;
+    if (reviews.length > 0) {
+      const totalRating = reviews.reduce((acc, r) => acc + r.rating, 0);
+      averageRating = totalRating / reviews.length;
+    }
+
+    await Item.findByIdAndUpdate(itemId, {
+      averageRating: averageRating.toFixed(1),
+      reviewCount: reviews.length,
+    });
+
+    res.status(200).json({ message: 'Review deleted and item rating updated' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting review', error: error.message });
   }
 };

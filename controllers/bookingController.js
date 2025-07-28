@@ -57,6 +57,7 @@ export const createBooking = async (req, res) => {
   }
 };
 
+// get owner's bookings
 export const getOwnerBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ owner: req.user._id })
@@ -69,6 +70,7 @@ export const getOwnerBookings = async (req, res) => {
   }
 };
 
+// approve or reject the booking made by user
 export const updateBookingStatus = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);

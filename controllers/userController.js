@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 
 const pendingUsers = new Map();
 
+// register a new user with otp verification
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,6 +30,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
+// login user
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -51,6 +53,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
+//verify user with otp
 export const verifyUser = async (req, res) => {
   const { email, otp } = req.body;
   const record = pendingUsers.get(email);
@@ -74,6 +77,7 @@ export const verifyUser = async (req, res) => {
   });
 };
 
+// get user profile
 export const getUserProfile = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ message: 'Not authorized' });
@@ -84,6 +88,7 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
+// update user profile
 export const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

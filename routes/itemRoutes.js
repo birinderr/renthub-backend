@@ -16,7 +16,6 @@ import { protect, isAdmin } from '../middleware/authMiddleware.js';
 
 // uploading images
 import upload from '../middleware/upload.js';
-import { createItem } from '../controllers/itemController.js';
 
 router.post('/', protect, isAdmin, upload.single('image'), createItem);
 

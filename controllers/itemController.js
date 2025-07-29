@@ -52,7 +52,7 @@ export const getItemById = async (req, res) => {
 // @access  Admin
 export const createItem = async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
+    const { name, description, pricePerDay, category } = req.body;
     const owner = req.user._id;
     const imageUrl = req.file?.path;
 
@@ -63,10 +63,11 @@ export const createItem = async (req, res) => {
     const item = await Item.create({
       name,
       description,
-      price,
+      pricePerDay,
       category,
       image: imageUrl,
       owner,
+      status: 'approved',
     });
 
     res.status(201).json(item);

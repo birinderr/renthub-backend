@@ -13,7 +13,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: 'renthub-items', // your desired folder name on Cloudinary
+    folder: 'renthub-items',
     allowed_formats: ['jpg', 'jpeg', 'png'],
   },
 });

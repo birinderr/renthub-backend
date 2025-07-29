@@ -28,6 +28,7 @@ const itemSchema = new mongoose.Schema(
     },
     image: {
       type: String,
+      required: true,
     },
     averageRating: {
       type: Number,

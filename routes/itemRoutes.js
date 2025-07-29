@@ -14,9 +14,15 @@ import {
 
 import { protect, isAdmin } from '../middleware/authMiddleware.js';
 
+// uploading images
+import upload from '../middleware/upload.js';
+import { createItem } from '../controllers/itemController.js';
+
+router.post('/', protect, isAdmin, upload.single('image'), createItem);
+
 // Logged in users
 router.get('/myitems', protect, getMyItems);
-router.post('/request', protect, requestItem);
+router.post('/request', protect, upload.single('image'), requestItem);
 
 
 // Public
@@ -24,7 +30,6 @@ router.get('/', getItems);
 router.get('/:id', getItemById);
 
 // Admin
-router.post('/', protect, isAdmin, createItem);
 router.put('/:id', protect, isAdmin, updateItem);
 router.delete('/:id', protect, isAdmin, deleteItem);
 

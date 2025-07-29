@@ -52,23 +52,29 @@ export const getItemById = async (req, res) => {
 // @access  Admin
 export const createItem = async (req, res) => {
   try {
-    const { name, description, image, category, pricePerDay } = req.body;
+    const { name, description, price, category } = req.body;
+    const owner = req.user._id;
+    const imageUrl = req.file?.path;
 
-    const item = new Item({
+    if (!imageUrl) {
+      return res.status(400).json({ message: 'Image upload failed' });
+    }
+
+    const item = await Item.create({
       name,
       description,
-      image,
+      price,
       category,
-      pricePerDay,
-      status: 'approved'
+      image: imageUrl,
+      owner,
     });
 
-    const createdItem = await item.save();
-    res.status(201).json(createdItem);
+    res.status(201).json(item);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create item', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 };
+
 
 // @desc    Admin updates an item
 // @route   PUT /api/items/:id
@@ -119,14 +125,19 @@ export const deleteItem = async (req, res) => {
 // @access  Private
 export const requestItem = async (req, res) => {
   try {
-    const { name, description, category, pricePerDay, image } = req.body;
+    const { name, description, category, pricePerDay } = req.body;
+    const imageUrl = req.file?.path;
+
+    if (!imageUrl) {
+      return res.status(400).json({ message: 'Image upload failed' });
+    }
 
     const item = await Item.create({
       name,
       description,
       category,
       pricePerDay,
-      image,
+      image: imageUrl,
       owner: req.user._id,
       status: 'pending'
     });
@@ -136,6 +147,7 @@ export const requestItem = async (req, res) => {
     res.status(500).json({ message: 'Error submitting item', error: err.message });
   }
 };
+
 
 // @desc    User deletes their own item
 // @route   DELETE /api/items/:id

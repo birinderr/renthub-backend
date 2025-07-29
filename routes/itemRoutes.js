@@ -29,7 +29,7 @@ router.get('/', getItems);
 router.get('/:id', getItemById);
 
 // Admin
-router.put('/:id', protect, isAdmin, updateItem);
+router.put('/:id', protect, admin, upload.single('image'), updateItem);
 router.delete('/:id', protect, isAdmin, deleteItem);
 
 // Private

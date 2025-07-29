@@ -84,20 +84,23 @@ export const updateItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
 
-    if (item) {
-      item.name = req.body.name || item.name;
-      item.description = req.body.description || item.description;
-      item.image = req.body.image || item.image;
-      item.category = req.body.category || item.category;
-      item.pricePerDay = req.body.pricePerDay || item.pricePerDay;
-      item.available = req.body.available ?? item.available;
-      item.status = req.body.status || item.status;
-
-      const updatedItem = await item.save();
-      res.json(updatedItem);
-    } else {
-      res.status(404).json({ message: 'Item not found' });
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
     }
+
+    item.name = req.body.name || item.name;
+    item.description = req.body.description || item.description;
+    item.category = req.body.category || item.category;
+    item.pricePerDay = req.body.pricePerDay || item.pricePerDay;
+    item.available = req.body.available ?? item.available;
+    item.status = req.body.status || item.status;
+
+    if (req.file?.path) {
+      item.image = req.file.path;
+    }
+
+    const updatedItem = await item.save();
+    res.json(updatedItem);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update item', error: error.message });
   }

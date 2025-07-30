@@ -121,3 +121,28 @@ export const deleteReview = async (req, res) => {
     res.status(500).json({ message: 'Error deleting review', error: error.message });
   }
 };
+
+// Get reviews given by the logged-in user
+export const getMyGivenReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ renter: req.user._id })
+      .populate('item', 'name image')
+      .sort({ createdAt: -1 });
+    res.status(200).json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch given reviews', error: error.message });
+  }
+};
+
+// Get reviews received for the user's items
+export const getMyReceivedReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ owner: req.user._id })
+      .populate('item', 'name image')
+      .populate('renter', 'name email')
+      .sort({ createdAt: -1 });
+    res.status(200).json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch received reviews', error: error.message });
+  }
+};

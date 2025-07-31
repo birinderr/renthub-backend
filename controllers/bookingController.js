@@ -29,6 +29,11 @@ export const createBooking = async (req, res) => {
       return res.status(404).json({ message: 'Item not found or not available for booking' });
     }
 
+    // Prevent user from booking their own item
+    if (item.owner._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot book your own item' });
+    }
+
     const start = new Date(startDate);
     const end = new Date(endDate);
     const timeDiff = end.getTime() - start.getTime();

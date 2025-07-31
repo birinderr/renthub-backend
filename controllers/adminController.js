@@ -23,7 +23,7 @@ export const getAllItemsAdmin = async (req, res) => {
 };
 
 // @desc    Delete a user by admin
-// @route   DELETE /api/admin/users/:id
+// @route   DELETE /api/admin/user/:id
 export const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);

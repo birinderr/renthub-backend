@@ -41,12 +41,15 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid email or password' });
 
+    const freshUser = await User.findById(user._id).lean();
     res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      token: generateToken(user._id),
+      _id:    freshUser._id,
+      name:   freshUser.name,
+      email:  freshUser.email,
+      phone:  freshUser.phone, 
+      address: freshUser.address, 
+      isAdmin:freshUser.isAdmin,
+      token:  generateToken(freshUser._id),
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -93,15 +96,16 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     user.name = req.body.name || user.name;
-    // user.email = req.body.email || user.email;
+    // user.email = req.body.email || user.email; // usually don't allow email change
+    user.phone = req.body.phone || user.phone;
+    user.address = req.body.address || user.address;
 
     if (req.body.password) {
-      const salt = await bcrypt.genSalt(10); // creating random string
-      user.password = await bcrypt.hash(req.body.password, salt); // adding the random string to the hashed password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(req.body.password, salt);
     }
 
     const updatedUser = await user.save();
@@ -111,6 +115,9 @@ export const updateUserProfile = async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       isAdmin: updatedUser.isAdmin,
+      phone: updatedUser.phone,
+      address: updatedUser.address,
+      token: generateToken(updatedUser._id),
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

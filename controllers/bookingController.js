@@ -1,13 +1,13 @@
+import mongoose from 'mongoose';
 import Booking from '../models/Booking.js';
 import Item from '../models/Item.js';
-import User from '../models/User.js';
 
-// Get all bookings for the logged-in user(renter)
 export const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ renter: req.user._id })
       .populate('item', 'name pricePerDay image owner')
-      .populate('owner', 'name email');
+      .populate('owner', 'name email')
+      .populate('renter', 'name email');
 
     res.status(200).json(bookings);
   } catch (error) {
@@ -15,7 +15,7 @@ export const getMyBookings = async (req, res) => {
   }
 };
 
-// Put up a booking request
+
 export const createBooking = async (req, res) => {
   const { itemId, startDate, endDate } = req.body;
 
@@ -25,12 +25,12 @@ export const createBooking = async (req, res) => {
 
   try {
     const item = await Item.findById(itemId).populate('owner');
-    if (!item || item.status !== 'approved') {
+    if (!item /* || item.status !== 'approved' */) {
       return res.status(404).json({ message: 'Item not found or not available for booking' });
     }
 
     // Prevent user from booking their own item
-    if (item.owner._id.toString() === req.user._id.toString()) {
+    if (item.owner && item.owner._id && item.owner._id.toString() === req.user._id.toString()) {
       return res.status(400).json({ message: 'You cannot book your own item' });
     }
 
@@ -48,11 +48,12 @@ export const createBooking = async (req, res) => {
     const booking = new Booking({
       item: item._id,
       renter: req.user._id,
-      owner: item.owner._id || item.owner,
+      owner: (item.owner && item.owner._id) ? item.owner._id : item.owner,
       startDate: start,
       endDate: end,
       pricePerDay: item.pricePerDay,
       totalPrice,
+      status: 'pending', 
     });
 
     const savedBooking = await booking.save();
@@ -62,7 +63,7 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// get owner's bookings
+// Get bookings for items owned by logged-in user (owner's incoming requests)
 export const getOwnerBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ owner: req.user._id })
@@ -75,30 +76,85 @@ export const getOwnerBookings = async (req, res) => {
   }
 };
 
-// approve or reject the booking made by user
+// Approve or reject booking
 export const updateBookingStatus = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
-    const booking = await Booking.findById(req.params.id);
+    session.startTransaction();
 
+    const bookingId = req.params.id;
+    const { status } = req.body;
+
+    if (!['approved', 'rejected'].includes(status)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    const booking = await Booking.findById(bookingId).session(session);
     if (!booking) {
+      await session.abortTransaction();
       return res.status(404).json({ message: 'Booking not found' });
     }
 
     if (booking.owner.toString() !== req.user._id.toString()) {
+      await session.abortTransaction();
       return res.status(403).json({ message: 'Not authorized to update this booking' });
     }
 
-    const { status } = req.body;
-
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+    
+    if (booking.status === status) {
+      await session.commitTransaction();
+      return res.status(200).json({ message: `Booking already ${status}`, booking });
     }
 
-    booking.status = status;
-    const updated = await booking.save();
+    if (status === 'approved') {
+      
+      booking.status = 'approved';
+      await booking.save({ session });
 
-    res.status(200).json({ message: `Booking ${status}`, booking: updated });
+      
+      const itemId = booking.item;
+      
+      const item = await Item.findById(itemId).session(session);
+      if (!item) {
+        
+        await session.abortTransaction();
+        return res.status(404).json({ message: 'Associated item not found' });
+      }
+
+      
+      await Item.deleteOne({ _id: itemId }).session(session);
+
+      // Remove all other bookings for this item (including pending ones)
+      await Booking.deleteMany({
+        item: itemId,
+        _id: { $ne: booking._id }
+      }).session(session);
+
+      await session.commitTransaction();
+
+      // Populate renter and item info (item was deleted, but booking.item still has id)
+      const populatedBooking = await Booking.findById(booking._id)
+        .populate('renter', 'name email')
+        .populate('owner', 'name email');
+
+      return res.status(200).json({ message: 'Booking approved; item removed and other bookings removed', booking: populatedBooking });
+    } else {
+      booking.status = 'rejected';
+      await booking.save({ session });
+      await session.commitTransaction();
+
+      const populatedBooking = await Booking.findById(booking._id)
+        .populate('renter', 'name email')
+        .populate('owner', 'name email')
+        .populate('item', 'name pricePerDay image');
+
+      return res.status(200).json({ message: 'Booking rejected', booking: populatedBooking });
+    }
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    await session.abortTransaction();
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  } finally {
+    session.endSession();
   }
 };

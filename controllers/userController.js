@@ -11,9 +11,13 @@ export const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
 
     const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: 'User already exists' });
+    if (existing) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = process.env.DEV_OTP || Math.floor(100000 + Math.random() * 900000).toString();
+
+    console.log("OTP generated:", otp);
 
     pendingUsers.set(email, {
       name,
@@ -25,6 +29,7 @@ export const registerUser = async (req, res) => {
     await sendOTPEmail(email, otp);
 
     res.status(200).json({ message: 'OTP sent to email' });
+
   } catch (err) {
     res.status(500).json({ message: 'Error sending OTP', error: err.message });
   }
@@ -36,33 +41,45 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
 
     const freshUser = await User.findById(user._id).lean();
+
     res.status(200).json({
-      _id:    freshUser._id,
-      name:   freshUser.name,
-      email:  freshUser.email,
-      phone:  freshUser.phone, 
-      address: freshUser.address, 
-      isAdmin:freshUser.isAdmin,
-      token:  generateToken(freshUser._id),
+      _id: freshUser._id,
+      name: freshUser.name,
+      email: freshUser.email,
+      phone: freshUser.phone,
+      address: freshUser.address,
+      isAdmin: freshUser.isAdmin,
+      token: generateToken(freshUser._id),
     });
+
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-//verify user with otp
+// verify user with otp
 export const verifyUser = async (req, res) => {
   const { email, otp } = req.body;
+
   const record = pendingUsers.get(email);
 
-  if (!record) return res.status(400).json({ message: 'No pending user found' });
-  if (record.otp !== otp) return res.status(400).json({ message: 'Invalid OTP' });
+  if (!record) {
+    return res.status(400).json({ message: 'No pending user found' });
+  }
+
+  if (record.otp !== otp) {
+    return res.status(400).json({ message: 'Invalid OTP' });
+  }
 
   const user = await User.create({
     name: record.name,
@@ -84,9 +101,12 @@ export const verifyUser = async (req, res) => {
 // get user profile
 export const getUserProfile = async (req, res) => {
   try {
-    if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
 
     res.status(200).json(req.user);
+
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -96,10 +116,12 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     user.name = req.body.name || user.name;
-    // user.email = req.body.email || user.email; // usually don't allow email change
     user.phone = req.body.phone || user.phone;
     user.address = req.body.address || user.address;
 
@@ -119,6 +141,7 @@ export const updateUserProfile = async (req, res) => {
       address: updatedUser.address,
       token: generateToken(updatedUser._id),
     });
+
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

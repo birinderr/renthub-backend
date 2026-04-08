@@ -1,49 +1,24 @@
-import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-console.log("Loading email configuration...");
-console.log("EMAIL_USER:", process.env.EMAIL_USER ? "Loaded" : "Missing");
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Verify SMTP connection when server starts
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("SMTP connection failed:", error);
-  } else {
-    console.log("SMTP server is ready to send emails");
-  }
-});
+console.log("Loading OTP configuration...");
+console.log("DEV_OTP:", process.env.DEV_OTP ? "Loaded" : "Missing");
 
 export const sendOTPEmail = async (email, otp) => {
   try {
-    console.log("Preparing OTP email...");
-    console.log("Recipient:", email);
+    console.log("OTP requested for:", email);
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Your RentHub OTP Code",
-      text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
-    };
+    // Use OTP from environment variable if available
+    const finalOTP = process.env.DEV_OTP || otp;
 
-    console.log("Sending email...");
+    console.log("OTP (for testing):", finalOTP);
 
-    const info = await transporter.sendMail(mailOptions);
-
-    console.log("Email sent successfully:", info.response);
-
+    // No email sending during development
     return true;
+
   } catch (error) {
-    console.error("Error sending OTP email:", error);
-    throw new Error("Error sending OTP");
+    console.error("Error handling OTP:", error);
+    throw new Error("Error processing OTP");
   }
 };
